@@ -91,6 +91,7 @@ adb install -r .\app\build\outputs\apk\debug\app-debug.apk
 - 暂未实现断点续传与二维码
 
 ---
+<img width="1280" height="2772" alt="Screenshot_2026-09-16-11-02-19-023_com lanfile tr" src="https://github.com/user-attachments/assets/bb8c3a69-7942-405f-913a-497f5ef9ec84" />
 
 ## English
 
