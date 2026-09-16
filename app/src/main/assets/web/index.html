@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="lan-token" content="__LAN_TOKEN__">
+<title>发送文件到手机</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page">
+
+  <header class="header">
+    <div class="brand">
+      <span class="brand-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6.5" y="2.5" width="11" height="19" rx="2.6"/>
+          <path d="M12 8.2v6.1"/>
+          <path d="M9.4 11.7 12 14.3l2.6-2.6"/>
+        </svg>
+      </span>
+      <div class="brand-text">
+        <h1>发送文件到手机</h1>
+        <p>局域网直传 · 不经过互联网</p>
+      </div>
+    </div>
+
+    <div class="status" id="status" data-state="loading">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span class="status-text" id="status-text">正在连接手机…</span>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="dropzone" id="dropzone" tabindex="0" role="button"
+             aria-label="点击选择文件，或将文件拖拽到此处">
+      <div class="dropzone-glow" aria-hidden="true"></div>
+      <div class="dropzone-body">
+        <span class="dropzone-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 16V4"/>
+            <path d="m7.5 8.5 4.5-4.5 4.5 4.5"/>
+            <path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/>
+          </svg>
+        </span>
+        <p class="dropzone-title">将文件拖到这里</p>
+        <p class="dropzone-or"><span>或</span></p>
+        <button class="btn btn-primary" id="select-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M13.5 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5z"/>
+            <path d="M13.5 3v5.5H19"/>
+          </svg>
+          选择文件
+        </button>
+        <p class="dropzone-hint">支持一次选择或拖入多个文件，单文件可达数 GB</p>
+      </div>
+      <input type="file" id="file-input" multiple hidden>
+    </section>
+
+    <section class="panel" id="queue-section" hidden>
+      <div class="panel-head">
+        <h2>传输列表</h2>
+        <div class="panel-tools">
+          <span class="summary" id="queue-summary"></span>
+          <button class="btn btn-ghost" id="clear-btn" type="button">清除已完成</button>
+        </div>
+      </div>
+      <ul class="queue" id="queue-list"></ul>
+    </section>
+
+    <section class="tips">
+      <div class="tip">
+        <span class="tip-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 4H4.5A1.5 1.5 0 0 0 3 5.5v13A1.5 1.5 0 0 0 4.5 20h15a1.5 1.5 0 0 0 1.5-1.5V8a1.5 1.5 0 0 0-1.5-1.5H12z"/>
+          </svg>
+        </span>
+        <div>
+          <strong>保存位置</strong>
+          <span>手机 Download/LANTransfer 目录</span>
+        </div>
+      </div>
+      <div class="tip">
+        <span class="tip-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v10"/>
+            <path d="m8.5 9.5 3.5 3.5 3.5-3.5"/>
+            <path d="M4 16.5V18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1.5"/>
+          </svg>
+        </span>
+        <div>
+          <strong>重名文件</strong>
+          <span>自动重命名为 “名称 (1).扩展名”，不会覆盖</span>
+        </div>
+      </div>
+      <div class="tip">
+        <span class="tip-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3 4.5 6v5.5c0 4.3 3.1 8.2 7.5 9.5 4.4-1.3 7.5-5.2 7.5-9.5V6z"/>
+            <path d="m9 12 2.2 2.2L15.5 10"/>
+          </svg>
+        </span>
+        <div>
+          <strong>访问保护</strong>
+          <span>本页面地址带一次性 Token，请勿分享给他人</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span id="footer-info">文件仅在本机与手机之间传输</span>
+  </footer>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

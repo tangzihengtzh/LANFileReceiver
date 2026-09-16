@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">局域网文件接收</string>
+
+    <string name="notification_channel_name">文件接收服务</string>
+    <string name="notification_channel_desc">显示局域网文件接收服务运行状态</string>
+    <string name="notification_title">局域网文件接收正在运行</string>
+    <string name="notification_stop">停止服务器</string>
+    <string name="notification_starting">正在启动服务器…</string>
+    <string name="notification_address">访问地址：%1$s</string>
+    <string name="notification_no_address">未检测到可用局域网地址，请确认已开启热点或 Wi-Fi</string>
+</resources>
