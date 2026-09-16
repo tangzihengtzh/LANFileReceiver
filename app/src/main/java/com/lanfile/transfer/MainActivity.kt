@@ -24,7 +24,11 @@ class MainActivity : ComponentActivity() {
         val app = application as LanApplication
         setContent {
             LanTheme {
-                MainScreen(repository = app.repository, config = app.config)
+                MainScreen(
+                    repository = app.repository,
+                    photoRepository = app.photoRepository,
+                    config = app.config
+                )
             }
         }
         requestRuntimePermissions()

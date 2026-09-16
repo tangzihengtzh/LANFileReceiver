@@ -23,6 +23,7 @@
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   --sans: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC",
           "Hiragino Sans GB", sans-serif;
+  --photo-placeholder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000'%3E%3Cpath d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z'/%3E%3C/svg%3E");
 }
 
 @media (prefers-color-scheme: light) {
@@ -423,6 +424,103 @@ body {
   font-size: 12px;
   color: var(--danger);
   word-break: break-all;
+}
+
+/* ---------------------------------------------- 手机照片画廊 */
+
+.photo-grid {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.photo-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--panel-border);
+  background: var(--bg-soft);
+  overflow: hidden;
+  animation: fade-in .22s ease;
+}
+
+.photo-preview {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: rgba(148, 165, 192, 0.14);
+  display: grid;
+  place-items: center;
+}
+
+.photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-preview.no-preview::after {
+  content: "";
+  width: 42px;
+  height: 42px;
+  background-color: var(--text-dim);
+  opacity: .55;
+  -webkit-mask: var(--photo-placeholder) center / contain no-repeat;
+  mask: var(--photo-placeholder) center / contain no-repeat;
+}
+
+.photo-badge {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: none;
+  place-items: center;
+  color: #fff;
+  background: var(--success);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .3);
+}
+
+.photo-badge svg { width: 12px; height: 12px; }
+
+.photo-card[data-sent="1"] .photo-badge { display: grid; }
+
+.photo-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px 0;
+  min-width: 0;
+}
+
+.photo-name {
+  font-size: 13px;
+  font-weight: 550;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-size { font-size: 11.5px; color: var(--text-dim); }
+
+.photo-actions { padding: 10px 12px 12px; }
+
+.btn-small {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  border-radius: 8px;
+}
+
+.photo-empty {
+  margin: 6px 0 2px;
+  font-size: 13px;
+  color: var(--text-dim);
 }
 
 /* ---------------------------------------------- 提示卡片 */

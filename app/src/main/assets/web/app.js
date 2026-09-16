@@ -19,6 +19,12 @@
   var statusBox = document.getElementById('status');
   var statusText = document.getElementById('status-text');
   var footerInfo = document.getElementById('footer-info');
+  var photosSection = document.getElementById('photos-section');
+  var photoGrid = document.getElementById('photo-grid');
+  var photosSummary = document.getElementById('photos-summary');
+  var photosEmpty = document.getElementById('photos-empty');
+  var photosRefresh = document.getElementById('photos-refresh');
+  var photosDownloadAll = document.getElementById('photos-download-all');
 
   var ICONS = {
     waiting:
@@ -213,6 +219,7 @@
     }
     if (!next) {
       updateSummary();
+      refreshPhotos();
       return;
     }
     running = true;
@@ -443,6 +450,116 @@
     updateSummary();
   });
 
+  /* ------------------------------------------------ 手机照片画廊 */
+
+  var photoSignature = '';
+
+  function createPhotoCard(photo) {
+    var li = document.createElement('li');
+    li.className = 'photo-card';
+    if (photo.downloaded) li.setAttribute('data-sent', '1');
+
+    var preview = document.createElement('div');
+    preview.className = 'photo-preview';
+
+    var img = document.createElement('img');
+    img.loading = 'lazy';
+    img.alt = photo.name;
+    img.src = withToken('/api/photos/' + encodeURIComponent(photo.id) + '/thumb');
+    img.addEventListener('error', function () {
+      img.hidden = true;
+      preview.classList.add('no-preview');
+    });
+    preview.appendChild(img);
+
+    var badge = document.createElement('span');
+    badge.className = 'photo-badge';
+    badge.innerHTML = ICONS.completed;
+    badge.title = '已发送到电脑';
+    preview.appendChild(badge);
+
+    var meta = document.createElement('div');
+    meta.className = 'photo-meta';
+    var name = document.createElement('span');
+    name.className = 'photo-name';
+    name.textContent = photo.name;
+    name.title = photo.name;
+    var size = document.createElement('span');
+    size.className = 'photo-size';
+    size.textContent = formatSize(photo.size);
+    meta.appendChild(name);
+    meta.appendChild(size);
+
+    var actions = document.createElement('div');
+    actions.className = 'photo-actions';
+    var link = document.createElement('a');
+    link.className = 'btn btn-primary btn-small';
+    link.href = withToken('/api/photos/' + encodeURIComponent(photo.id));
+    link.setAttribute('download', photo.name);
+    link.textContent = '下载到电脑';
+    actions.appendChild(link);
+
+    li.appendChild(preview);
+    li.appendChild(meta);
+    li.appendChild(actions);
+    return li;
+  }
+
+  function renderPhotos(list) {
+    var signature = list.map(function (photo) {
+      return photo.id + (photo.downloaded ? '1' : '0');
+    }).join(',');
+
+    if (signature === photoSignature) return;
+    photoSignature = signature;
+
+    photosSection.hidden = false;
+    photosEmpty.hidden = list.length !== 0;
+    photoGrid.innerHTML = '';
+
+    var total = 0;
+    list.forEach(function (photo) {
+      total += photo.size || 0;
+      photoGrid.appendChild(createPhotoCard(photo));
+    });
+
+    photosSummary.textContent = list.length
+      ? list.length + ' 张 · ' + formatSize(total)
+      : '';
+  }
+
+  function refreshPhotos() {
+    if (running) return;
+    fetch(withToken('/api/photos'), { cache: 'no-store' })
+      .then(function (response) {
+        if (!response.ok) throw new Error(String(response.status));
+        return response.json();
+      })
+      .then(function (data) {
+        renderPhotos((data && data.photos) || []);
+      })
+      .catch(function () {
+        /* 手机不可达时保留上一次的列表 */
+      });
+  }
+
+  photosRefresh.addEventListener('click', function () {
+    photoSignature = '';
+    refreshPhotos();
+  });
+
+  photosDownloadAll.addEventListener('click', function () {
+    var links = photoGrid.querySelectorAll('a[download]');
+    if (!links.length) return;
+    var index = 0;
+    (function next() {
+      if (index >= links.length) return;
+      links[index].click();
+      index++;
+      setTimeout(next, 600);
+    })();
+  });
+
   /* ------------------------------------------------ 状态轮询 */
 
   function refreshStatus() {
@@ -473,4 +590,6 @@
 
   refreshStatus();
   setInterval(refreshStatus, 8000);
+  refreshPhotos();
+  setInterval(refreshPhotos, 6000);
 })();

@@ -1,6 +1,7 @@
 package com.lanfile.transfer
 
 import android.app.Application
+import com.lanfile.transfer.repository.PhotoShareRepository
 import com.lanfile.transfer.repository.TransferRepository
 import com.lanfile.transfer.storage.ServerConfig
 
@@ -10,6 +11,9 @@ import com.lanfile.transfer.storage.ServerConfig
 class LanApplication : Application() {
 
     val repository: TransferRepository by lazy { TransferRepository() }
+
+    /** 手机 → 电脑 的待发送照片列表。 */
+    val photoRepository: PhotoShareRepository by lazy { PhotoShareRepository() }
 
     val config: ServerConfig by lazy { ServerConfig(this) }
 

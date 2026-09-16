@@ -4,15 +4,18 @@ import java.security.SecureRandom
 
 /**
  * 每次启动服务器生成一次性的访问 Token。
- * 不使用易混淆字符（0/O、1/I）。
+ *
+ * 当前为 4 位数字（保留前导零），仅用于局域网内的基础访问保护，
+ * 不作为强身份认证使用。
  */
 object TokenGenerator {
-    private const val ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+    private const val LENGTH = 4
     private val random = SecureRandom()
 
-    fun generate(length: Int = 6): String {
-        val sb = StringBuilder(length)
-        repeat(length) { sb.append(ALPHABET[random.nextInt(ALPHABET.length)]) }
-        return sb.toString()
+    fun generate(): String {
+        val builder = StringBuilder(LENGTH)
+        repeat(LENGTH) { builder.append(random.nextInt(10)) }
+        return builder.toString()
     }
 }

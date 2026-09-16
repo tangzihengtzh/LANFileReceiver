@@ -4,7 +4,11 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Build
+import android.provider.MediaStore
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -53,6 +57,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,12 +70,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.lanfile.transfer.media.PhotoAccess
 import com.lanfile.transfer.model.LanAddress
 import com.lanfile.transfer.model.ServerState
 import com.lanfile.transfer.model.ServerStatus
 import com.lanfile.transfer.model.TransferItem
 import com.lanfile.transfer.model.TransferStatus
 import com.lanfile.transfer.network.NetworkUtils
+import com.lanfile.transfer.repository.PhotoShareRepository
 import com.lanfile.transfer.repository.TransferRepository
 import com.lanfile.transfer.server.ServerService
 import com.lanfile.transfer.storage.FileNameUtils
@@ -80,21 +87,55 @@ import com.lanfile.transfer.ui.icons.AppIcons
 import com.lanfile.transfer.ui.theme.StatusColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     repository: TransferRepository,
+    photoRepository: PhotoShareRepository,
     config: ServerConfig
 ) {
     val context = LocalContext.current
     val serverState by repository.serverState.collectAsState()
     val transfers by repository.transfers.collectAsState()
     val connectedDevices by repository.connectedDevices.collectAsState()
+    val sharedPhotos by photoRepository.photos.collectAsState()
 
     var showPortDialog by remember { mutableStateOf(false) }
     var storageReady by remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
+
+    // 系统照片选择器：无需任何存储权限
+    // 部分机型 getPickImagesMaxLimit() 会返回 1 导致构造异常，这里做一次夹取
+    val maxPhotoPick = remember {
+        try {
+            val limit = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                MediaStore.getPickImagesMaxLimit()
+            } else {
+                MAX_PHOTO_PICK
+            }
+            limit.coerceIn(2, MAX_PHOTO_PICK)
+        } catch (t: Throwable) {
+            MAX_PHOTO_PICK
+        }
+    }
+    val pickPhotos = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(maxPhotoPick)
+    ) { uris ->
+        if (uris.isEmpty()) return@rememberLauncherForActivityResult
+        scope.launch {
+            val items = withContext(Dispatchers.IO) { PhotoAccess.buildSharedPhotos(context, uris) }
+            val added = photoRepository.addAll(items)
+            val message = when {
+                added > 0 -> "已添加 $added 张照片"
+                items.isEmpty() -> "未识别到照片"
+                else -> "这些照片已在列表中"
+            }
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     LaunchedEffect(serverState.status) {
         storageReady = withContext(Dispatchers.IO) { FileStorageManager(context).canWrite() }
@@ -167,6 +208,18 @@ fun MainScreen(
             } else {
                 GuideCard()
             }
+
+            PhotoShareSection(
+                photos = sharedPhotos,
+                serverRunning = serverState.status == ServerStatus.RUNNING,
+                onPick = {
+                    pickPhotos.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                },
+                onRemove = { photoRepository.remove(it) },
+                onClear = { photoRepository.clear() }
+            )
 
             StorageCard(port = config.port, onEditPort = { showPortDialog = true })
 
@@ -729,18 +782,6 @@ private fun PrivacyNote() {
 }
 
 @Composable
-private fun SectionCard(content: @Composable () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Column(Modifier.padding(16.dp)) { content() }
-    }
-}
-
-@Composable
 private fun PortDialog(
     current: Int,
     onDismiss: () -> Unit,
@@ -801,3 +842,5 @@ private fun copyAddress(context: Context, url: String) {
         Toast.makeText(context, "复制失败", Toast.LENGTH_SHORT).show()
     }
 }
+
+private const val MAX_PHOTO_PICK = 100

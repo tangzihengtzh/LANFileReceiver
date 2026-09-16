@@ -71,6 +71,33 @@ class HttpResponseWriter(private val output: OutputStream) {
         sendBytes(status, "application/json; charset=utf-8", json.toByteArray(Charsets.UTF_8))
     }
 
+    /**
+     * 流式响应。contentLength 小于 0 时不写 Content-Length，
+     * 由 Connection: close 界定响应体结束。
+     */
+    fun sendStream(
+        status: Int,
+        contentType: String?,
+        contentLength: Long,
+        extraHeaders: Map<String, String> = emptyMap(),
+        write: (OutputStream) -> Unit
+    ) {
+        val head = buildString {
+            append("HTTP/1.1 ").append(status).append(' ').append(reason(status)).append("\r\n")
+            if (contentType != null) append("Content-Type: ").append(contentType).append("\r\n")
+            if (contentLength >= 0) append("Content-Length: ").append(contentLength).append("\r\n")
+            append("Cache-Control: no-store\r\n")
+            append("Connection: close\r\n")
+            for ((key, value) in extraHeaders) {
+                append(key).append(": ").append(value).append("\r\n")
+            }
+            append("\r\n")
+        }
+        output.write(head.toByteArray(Charsets.ISO_8859_1))
+        write(output)
+        output.flush()
+    }
+
     private fun reason(status: Int): String = when (status) {
         200 -> "OK"
         204 -> "No Content"

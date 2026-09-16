@@ -96,6 +96,7 @@ class ServerService : Service() {
             context = this,
             storage = FileStorageManager(this),
             repository = repository,
+            photoRepository = (application as LanApplication).photoRepository,
             tokenProvider = { token },
             deviceNameProvider = { deviceName() }
         )
