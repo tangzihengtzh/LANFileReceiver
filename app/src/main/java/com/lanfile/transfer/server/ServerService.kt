@@ -37,6 +37,7 @@ class ServerService : Service() {
         get() = (application as LanApplication).config
 
     private var server: HttpServer? = null
+    private var sessions: SessionStore? = null
 
     @Volatile
     private var running = false
@@ -92,11 +93,14 @@ class ServerService : Service() {
         }
 
         val token = TokenGenerator.generate()
+        val sessions = SessionStore()
+        this.sessions = sessions
         val router = ApiRouter(
             context = this,
             storage = FileStorageManager(this),
             repository = repository,
             photoRepository = (application as LanApplication).photoRepository,
+            sessions = sessions,
             tokenProvider = { token },
             deviceNameProvider = { deviceName() }
         )
@@ -134,6 +138,8 @@ class ServerService : Service() {
         }
         server?.stop()
         server = null
+        sessions?.clear()
+        sessions = null
         running = false
         repository.setServerStopped()
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)

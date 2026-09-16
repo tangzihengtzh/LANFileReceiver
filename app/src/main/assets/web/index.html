@@ -4,11 +4,37 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark light">
-<meta name="lan-token" content="__LAN_TOKEN__">
 <title>发送文件到手机</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <span class="gate-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+           stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4.5" y="10" width="15" height="10.5" rx="2.4"/>
+        <path d="M8.2 10V7.4a3.8 3.8 0 0 1 7.6 0V10"/>
+        <path d="M12 14.2v2.4"/>
+      </svg>
+    </span>
+    <h2>请输入访问 Token</h2>
+    <p>打开手机 App「局域网文件接收」，输入界面上显示的 4 位数字</p>
+    <input
+      id="token-input"
+      class="gate-input"
+      type="text"
+      inputmode="numeric"
+      autocomplete="off"
+      maxlength="4"
+      placeholder="0000"
+      aria-label="访问 Token">
+    <p class="gate-error" id="gate-error" hidden></p>
+    <button class="btn btn-primary gate-submit" id="gate-submit" type="button">进入</button>
+    <p class="gate-note">Token 只在局域网内校验，不会出现在网址中</p>
+  </div>
+</div>
 <div class="page">
 
   <header class="header">
@@ -124,7 +150,7 @@
         </span>
         <div>
           <strong>访问保护</strong>
-          <span>本页面地址带一次性 Token，请勿分享给他人</span>
+          <span>打开页面后输入手机 App 上显示的 4 位 Token，Token 不会出现在网址中</span>
         </div>
       </div>
     </section>

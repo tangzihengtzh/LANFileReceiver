@@ -6,8 +6,12 @@
 (function () {
   'use strict';
 
-  var metaToken = document.querySelector('meta[name="lan-token"]');
-  var TOKEN = metaToken ? metaToken.getAttribute('content') : '';
+  var gate = document.getElementById('gate');
+  var gateInput = document.getElementById('token-input');
+  var gateError = document.getElementById('gate-error');
+  var gateSubmit = document.getElementById('gate-submit');
+
+  var authenticated = false;
 
   var dropzone = document.getElementById('dropzone');
   var fileInput = document.getElementById('file-input');
@@ -49,11 +53,90 @@
   var running = false;
   var sequence = 0;
 
-  /* ------------------------------------------------ 工具函数 */
+  /* ------------------------------------------------ Token 验证 */
 
-  function withToken(path) {
-    return path + (path.indexOf('?') >= 0 ? '&' : '?') + 'token=' + encodeURIComponent(TOKEN);
+  function showGate(message) {
+    authenticated = false;
+    if (!gate.hidden) {
+      if (message) {
+        gateError.textContent = message;
+        gateError.hidden = false;
+      }
+      return;
+    }
+    gate.hidden = false;
+    document.body.classList.add('locked');
+    if (message) {
+      gateError.textContent = message;
+      gateError.hidden = false;
+    }
+    setTimeout(function () { gateInput.focus(); }, 60);
   }
+
+  function hideGate() {
+    if (authenticated) return;
+    authenticated = true;
+    gate.hidden = true;
+    document.body.classList.remove('locked');
+    gateError.hidden = true;
+    gateInput.value = '';
+    photoSignature = '';
+    refreshStatus();
+    refreshPhotos();
+  }
+
+  function submitToken() {
+    var token = (gateInput.value || '').replace(/\D/g, '');
+    if (token.length !== 4) {
+      gateError.textContent = '请输入 4 位数字';
+      gateError.hidden = false;
+      return;
+    }
+
+    gateSubmit.disabled = true;
+    fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      body: token
+    })
+      .then(function (response) {
+        return response.json()
+          .catch(function () { return {}; })
+          .then(function (data) {
+            return { ok: response.ok, data: data };
+          });
+      })
+      .then(function (result) {
+        gateSubmit.disabled = false;
+        if (result.ok) {
+          hideGate();
+          return;
+        }
+        gateError.textContent = (result.data && result.data.message) || 'Token 不正确';
+        gateError.hidden = false;
+        gateInput.value = '';
+        gateInput.focus();
+      })
+      .catch(function () {
+        gateSubmit.disabled = false;
+        gateError.textContent = '无法连接手机，请检查网络';
+        gateError.hidden = false;
+      });
+  }
+
+  gateSubmit.addEventListener('click', submitToken);
+
+  gateInput.addEventListener('input', function () {
+    gateInput.value = gateInput.value.replace(/\D/g, '').slice(0, 4);
+    gateError.hidden = true;
+    if (gateInput.value.length === 4) submitToken();
+  });
+
+  gateInput.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') submitToken();
+  });
+
+  /* ------------------------------------------------ 工具函数 */
 
   function formatSize(bytes) {
     if (!bytes || bytes < 0) return '0 B';
@@ -246,8 +329,7 @@
       form.append('file', entry.file, entry.name);
 
       var xhr = new XMLHttpRequest();
-      xhr.open('POST', withToken('/api/upload'), true);
-      xhr.setRequestHeader('X-Auth-Token', TOKEN);
+      xhr.open('POST', '/api/upload', true);
       xhr.timeout = 0;
 
       xhr.upload.onprogress = function (event) {
@@ -264,7 +346,8 @@
         }
 
         if (xhr.status === 403) {
-          fail(entry, 'Token 无效，请在手机上重新复制完整地址');
+          showGate('会话已失效，请重新输入 Token');
+          fail(entry, '会话已失效，请重新输入 Token');
           return resolve();
         }
         if (payload && payload.success) {
@@ -465,7 +548,7 @@
     var img = document.createElement('img');
     img.loading = 'lazy';
     img.alt = photo.name;
-    img.src = withToken('/api/photos/' + encodeURIComponent(photo.id) + '/thumb');
+    img.src = '/api/photos/' + encodeURIComponent(photo.id) + '/thumb';
     img.addEventListener('error', function () {
       img.hidden = true;
       preview.classList.add('no-preview');
@@ -494,7 +577,7 @@
     actions.className = 'photo-actions';
     var link = document.createElement('a');
     link.className = 'btn btn-primary btn-small';
-    link.href = withToken('/api/photos/' + encodeURIComponent(photo.id));
+    link.href = '/api/photos/' + encodeURIComponent(photo.id);
     link.setAttribute('download', photo.name);
     link.textContent = '下载到电脑';
     actions.appendChild(link);
@@ -530,12 +613,17 @@
 
   function refreshPhotos() {
     if (running) return;
-    fetch(withToken('/api/photos'), { cache: 'no-store' })
+    fetch('/api/photos', { cache: 'no-store' })
       .then(function (response) {
+        if (response.status === 403) {
+          showGate();
+          return null;
+        }
         if (!response.ok) throw new Error(String(response.status));
         return response.json();
       })
       .then(function (data) {
+        if (!data) return;
         renderPhotos((data && data.photos) || []);
       })
       .catch(function () {
@@ -564,12 +652,20 @@
 
   function refreshStatus() {
     if (running) return;
-    fetch(withToken('/api/status'), { cache: 'no-store' })
+    fetch('/api/status', { cache: 'no-store' })
       .then(function (response) {
+        if (response.status === 403) {
+          showGate();
+          return null;
+        }
         if (!response.ok) throw new Error(String(response.status));
         return response.json();
       })
       .then(function (data) {
+        if (!data) return;
+        if (!authenticated) {
+          hideGate();
+        }
         var name = data.deviceName || '手机';
         setStatus('online', '已连接 ' + name + ' · 端口 ' + data.port);
         footerInfo.textContent = '文件将保存到 ' + name + ' 的 Download/LANTransfer 目录';
@@ -590,6 +686,5 @@
 
   refreshStatus();
   setInterval(refreshStatus, 8000);
-  refreshPhotos();
   setInterval(refreshPhotos, 6000);
 })();

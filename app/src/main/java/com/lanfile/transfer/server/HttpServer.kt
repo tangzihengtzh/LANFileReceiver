@@ -33,6 +33,33 @@ class HttpRequest(
 ) {
     fun header(name: String): String? = headers[name.lowercase(Locale.ROOT)]
 
+    /** 读取指定名称的 Cookie 值。 */
+    fun cookie(name: String): String? {
+        val raw = headers["cookie"] ?: return null
+        for (part in raw.split(';')) {
+            val separator = part.indexOf('=')
+            if (separator <= 0) continue
+            if (part.substring(0, separator).trim().equals(name, ignoreCase = true)) {
+                return part.substring(separator + 1).trim()
+            }
+        }
+        return null
+    }
+
+    /** 读取不超过 [maxBytes] 的请求体文本，超出或缺失时返回 null。 */
+    fun readBodyText(maxBytes: Int): String? {
+        val length = contentLength
+        if (length <= 0 || length > maxBytes) return null
+        val buffer = ByteArray(length.toInt())
+        var read = 0
+        while (read < buffer.size) {
+            val count = input.read(buffer, read, buffer.size - read)
+            if (count < 0) break
+            read += count
+        }
+        return String(buffer, 0, read, Charsets.UTF_8)
+    }
+
     fun query(name: String): String? = query[name]
 }
 

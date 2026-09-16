@@ -67,7 +67,8 @@ data class ServerState(
     val recommendedAddress: LanAddress?
         get() = addresses.firstOrNull()
 
-    fun urlFor(address: LanAddress): String = "http://${address.ip}:$port/?token=$token"
+    /** 访问地址不含 Token，Token 需要用户在网页输入框里手动输入。 */
+    fun urlFor(address: LanAddress): String = "http://${address.ip}:$port"
 
     val primaryUrl: String?
         get() = recommendedAddress?.let { urlFor(it) }
