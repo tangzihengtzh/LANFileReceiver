@@ -99,7 +99,7 @@ class ServerService : Service() {
             context = this,
             storage = FileStorageManager(this),
             repository = repository,
-            photoRepository = (application as LanApplication).photoRepository,
+            shareRepository = (application as LanApplication).shareRepository,
             sessions = sessions,
             tokenProvider = { token },
             deviceNameProvider = { deviceName() }

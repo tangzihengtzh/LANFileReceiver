@@ -1,8 +1,10 @@
-# LANFileReceiver · 局域网文件接收
+﻿# LANFileReceiver · 局域网文件接收
 
-把 Android 手机变成局域网文件接收端：手机开热点，电脑用浏览器打开手机显示的地址，拖入文件即保存到手机 `Download/LANTransfer/`；反向也能把手机上的照片下载到电脑。全程局域网直传，无需数据线、客户端或云服务。
+把 Android 手机变成局域网文件接收端：手机开热点，电脑用浏览器打开手机显示的地址，拖入文件即保存到手机 `Download/LANTransfer/`；反向也能把手机上的照片或任意文件下载到电脑。全程局域网直传，无需数据线、客户端或云服务。
 
-Turn your Android phone into a LAN file receiver: start a hotspot, open the address shown on the phone in any browser, drag & drop files — they land in `Download/LANTransfer/`. The reverse direction works too: pick photos on the phone and download them to your PC. Everything stays on your LAN — no cable, no client, no cloud.
+Turn your Android phone into a LAN file receiver: start a hotspot, open the address shown on the phone in any browser, drag & drop files — they land in `Download/LANTransfer/`. The reverse direction works too: pick photos or any other file on the phone and download it to your PC. Everything stays on your LAN — no cable, no client, no cloud.
+
+> **版本 / Version**：v0.3 — 双向传输：电脑 → 手机 任意文件，手机 → 电脑 照片与任意文件
 
 ## 界面 / Screenshots
 
@@ -14,7 +16,7 @@ Turn your Android phone into a LAN file receiver: start a hotspot, open the addr
 1. 手机开启热点，电脑连接该热点
 2. 手机上点击「启动文件接收」，记下显示的地址和 4 位 Token
 3. 电脑浏览器打开 `http://192.168.x.x:8080`，在输入框中填入 Token
-4. 拖拽或选择文件上传；手机照片可在网页「手机上的照片」中下载
+4. 拖拽或选择文件上传；手机端的照片与文件可在网页「手机上的文件」中下载
 
 ## 特性 / Features
 
@@ -26,7 +28,7 @@ Turn your Android phone into a LAN file receiver: start a hotspot, open the addr
 - **地址自动探测**：排除 VPN / 回环 / IPv6 / 蜂窝，给出可用局域网 IPv4
 - **Token 不进网址**：打开页面弹出输入框，校验通过后下发会话 Cookie
 - **后台不中断**：服务器运行在前台服务中，切后台或锁屏传输继续
-- **双向传输**：手机选照片，电脑网页直接预览并下载
+- **双向传输**：手机选照片或任意文件，电脑网页直接预览并下载
 - **异常健壮**：断网、存储失败、空间不足均记录失败并清理临时文件
 
 - **No client** — any browser works
@@ -37,7 +39,7 @@ Turn your Android phone into a LAN file receiver: start a hotspot, open the addr
 - **Auto address detection** — skips VPN / loopback / IPv6 / cellular
 - **No token in the URL** — a prompt appears on load, then a session cookie is issued
 - **Runs in the background** via a foreground service
-- **Two-way** — pick photos on the phone, preview and download them on the PC
+- **Two-way** — pick photos or any file on the phone, preview and download it on the PC
 - **Fails cleanly** on disconnects, storage errors and low disk space
 
 ## HTTP 接口 / API
@@ -50,9 +52,9 @@ Turn your Android phone into a LAN file receiver: start a hotspot, open the addr
 | GET | `/api/status` | 服务器状态、设备名、地址 |
 | GET | `/api/transfers` | 本次运行期间的传输记录 |
 | POST | `/api/upload` | `multipart/form-data` 流式上传（单/多文件） |
-| GET | `/api/photos` | 手机端已选照片列表 |
-| GET | `/api/photos/{id}` | 下载原图 |
-| GET | `/api/photos/{id}/thumb` | 缩略图 |
+| GET | `/api/files` | 手机端已选文件列表 |
+| GET | `/api/files/{id}` | 下载原始文件 |
+| GET | `/api/files/{id}/thumb` | 图片缩略图（非图片返回 415） |
 
 除 `/` 与静态资源外均需鉴权：浏览器用会话 Cookie，脚本可用 `X-Auth-Token` 请求头。
 Token 每次启动服务器重新生成，重启后会话失效，网页会自动重新弹出输入框；同一 IP 连续 10 次失败锁定 30 秒。
@@ -91,13 +93,14 @@ JDK 17+、Android SDK Platform 36、Build-Tools 37.0.0；minSdk 24 / targetSdk 3
 ## 已知限制 / Limitations
 
 - 不负责开关热点，需手动开启
-- 传输记录与照片列表仅存内存，进程结束即清空
-- 手机 → 电脑仅支持照片；暂无断点续传与二维码
+- 传输记录与共享文件列表仅存内存，进程结束即清空
+- 暂无断点续传与二维码
 
 ## 版本 / Versions
 
 | 版本 | 内容 |
 |---|---|
+| **v0.3** | 手机端除照片外还可选择任意文件发送到电脑；接口 `/api/photos` 更名为 `/api/files` |
 | **v0.2** | Token 改为网页输入框 + 会话 Cookie，不再出现在网址中 |
 | **v0.1** | 手机 → 电脑照片传输；Token 改为 4 位数字 |
 | **v0** | 首个版本：手机作为局域网文件接收端，浏览器拖拽上传 |
@@ -106,4 +109,5 @@ JDK 17+、Android SDK Platform 36、Build-Tools 37.0.0；minSdk 24 / targetSdk 3
 git checkout v0     # 第一个版本
 git checkout v0.1   # 双向传输
 git checkout v0.2   # Token 输入框
+git checkout v0.3   # 文件传输
 ```

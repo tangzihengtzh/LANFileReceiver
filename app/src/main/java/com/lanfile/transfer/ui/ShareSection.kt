@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -44,37 +45,39 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.lanfile.transfer.media.PhotoAccess
-import com.lanfile.transfer.model.SharedPhoto
+import com.lanfile.transfer.media.SharedFileAccess
+import com.lanfile.transfer.model.SharedFile
 import com.lanfile.transfer.storage.FileNameUtils
 import com.lanfile.transfer.ui.icons.AppIcons
 import com.lanfile.transfer.ui.theme.StatusColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 /**
- * 手机 → 电脑：选择照片并共享给电脑浏览器下载。
+ * 手机 → 电脑：选择照片或任意文件并共享给电脑浏览器下载。
  */
 @Composable
-internal fun PhotoShareSection(
-    photos: List<SharedPhoto>,
+internal fun ShareSection(
+    files: List<SharedFile>,
     serverRunning: Boolean,
-    onPick: () -> Unit,
+    onPickPhotos: () -> Unit,
+    onPickFiles: () -> Unit,
     onRemove: (String) -> Unit,
     onClear: () -> Unit
 ) {
     SectionCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                imageVector = AppIcons.Photo,
+                imageVector = AppIcons.Send,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.size(18.dp)
             )
             Spacer(Modifier.width(8.dp))
-            Text("发送照片到电脑", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            Text("发送文件到电脑", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.weight(1f))
-            if (photos.isNotEmpty()) {
+            if (files.isNotEmpty()) {
                 TextButton(onClick = onClear) {
                     Text("清空", fontSize = 12.sp)
                 }
@@ -84,46 +87,57 @@ internal fun PhotoShareSection(
         Spacer(Modifier.height(4.dp))
 
         Text(
-            text = if (photos.isEmpty()) {
-                "选择手机里的照片，电脑打开网页即可下载到电脑。"
+            text = if (files.isEmpty()) {
+                "选择手机里的照片或任意文件，电脑打开网页即可下载。"
             } else {
-                val total = photos.sumOf { if (it.size > 0) it.size else 0L }
-                val sent = photos.count { it.downloaded }
-                "已选 ${photos.size} 张 · ${FileNameUtils.formatSize(total)} · 已发送 $sent 张"
+                val total = files.sumOf { if (it.size > 0) it.size else 0L }
+                val sent = files.count { it.downloaded }
+                "已选 ${files.size} 个 · ${FileNameUtils.formatSize(total)} · 已发送 $sent 个"
             },
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        if (photos.isNotEmpty()) {
+        if (files.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 contentPadding = PaddingValues(end = 4.dp)
             ) {
-                items(items = photos, key = { it.id }) { photo ->
-                    PhotoCard(photo = photo, onRemove = { onRemove(photo.id) })
+                items(items = files, key = { it.id }) { file ->
+                    SharedFileCard(file = file, onRemove = { onRemove(file.id) })
                 }
             }
         }
 
         Spacer(Modifier.height(14.dp))
 
-        Button(
-            onClick = onPick,
-            modifier = Modifier.fillMaxWidth().height(46.dp),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Icon(AppIcons.Photo, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(8.dp))
-            Text(if (photos.isEmpty()) "选择照片" else "继续添加照片", fontSize = 14.sp)
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Button(
+                onClick = onPickPhotos,
+                modifier = Modifier.weight(1f).height(46.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(AppIcons.Photo, contentDescription = null, modifier = Modifier.size(17.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("选择照片", fontSize = 13.sp)
+            }
+            OutlinedButton(
+                onClick = onPickFiles,
+                modifier = Modifier.weight(1f).height(46.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(AppIcons.File, contentDescription = null, modifier = Modifier.size(17.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("选择文件", fontSize = 13.sp)
+            }
         }
 
-        if (photos.isNotEmpty()) {
+        if (files.isNotEmpty()) {
             Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = if (serverRunning) AppIcons.Send else AppIcons.Info,
+                    imageVector = if (serverRunning) AppIcons.Info else AppIcons.Info,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(14.dp)
@@ -131,9 +145,9 @@ internal fun PhotoShareSection(
                 Spacer(Modifier.width(6.dp))
                 Text(
                     text = if (serverRunning) {
-                        "在电脑网页的「手机上的照片」区域点击下载"
+                        "在电脑网页的「手机上的文件」区域点击下载"
                     } else {
-                        "请先启动文件接收，电脑才能看到这些照片"
+                        "请先启动文件接收，电脑才能看到这些文件"
                     },
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -144,7 +158,7 @@ internal fun PhotoShareSection(
 }
 
 @Composable
-private fun PhotoCard(photo: SharedPhoto, onRemove: () -> Unit) {
+private fun SharedFileCard(file: SharedFile, onRemove: () -> Unit) {
     Column(modifier = Modifier.width(96.dp)) {
         Box(
             modifier = Modifier
@@ -153,9 +167,30 @@ private fun PhotoCard(photo: SharedPhoto, onRemove: () -> Unit) {
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
-            PhotoThumbnail(photo = photo, modifier = Modifier.fillMaxSize())
+            if (file.isImage) {
+                ImageThumbnail(file = file, modifier = Modifier.fillMaxSize())
+            } else {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = AppIcons.File,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(30.dp)
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = extensionLabel(file.displayName),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
 
-            if (photo.downloaded) {
+            if (file.downloaded) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
@@ -199,14 +234,14 @@ private fun PhotoCard(photo: SharedPhoto, onRemove: () -> Unit) {
 
         Spacer(Modifier.height(6.dp))
         Text(
-            text = photo.displayName,
+            text = file.displayName,
             fontSize = 11.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
-            text = FileNameUtils.formatSize(photo.size),
+            text = FileNameUtils.formatSize(file.size),
             fontSize = 10.sp,
             maxLines = 1,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -215,14 +250,15 @@ private fun PhotoCard(photo: SharedPhoto, onRemove: () -> Unit) {
 }
 
 @Composable
-private fun PhotoThumbnail(photo: SharedPhoto, modifier: Modifier) {
+private fun ImageThumbnail(file: SharedFile, modifier: Modifier) {
     val context = LocalContext.current
-    var bitmap by remember(photo.id) { mutableStateOf<ImageBitmap?>(null) }
+    var bitmap by remember(file.id) { mutableStateOf<ImageBitmap?>(null) }
 
-    LaunchedEffect(photo.id) {
+    LaunchedEffect(file.id) {
         val loaded = withContext(Dispatchers.IO) {
             try {
-                PhotoAccess.loadThumbnailBitmap(context, Uri.parse(photo.uri), 256)?.asImageBitmap()
+                SharedFileAccess.loadThumbnailBitmap(context, Uri.parse(file.uri), 256)
+                    ?.asImageBitmap()
             } catch (t: Throwable) {
                 null
             }
@@ -234,7 +270,7 @@ private fun PhotoThumbnail(photo: SharedPhoto, modifier: Modifier) {
     if (current != null) {
         Image(
             bitmap = current,
-            contentDescription = photo.displayName,
+            contentDescription = file.displayName,
             contentScale = ContentScale.Crop,
             modifier = modifier
         )
@@ -248,4 +284,11 @@ private fun PhotoThumbnail(photo: SharedPhoto, modifier: Modifier) {
             )
         }
     }
+}
+
+private fun extensionLabel(name: String): String {
+    val index = name.lastIndexOf('.')
+    if (index <= 0 || index >= name.length - 1) return "文件"
+    val extension = name.substring(index + 1).uppercase(Locale.ROOT)
+    return if (extension.length > 5) extension.take(5) else extension
 }

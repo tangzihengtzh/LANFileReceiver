@@ -203,6 +203,14 @@ object AppIcons {
         buildIcon("Send", "M2.01 21L23 12 2.01 3 2 10l15 2-15 2z")
     }
 
+    /** 普通文件 */
+    val File: ImageVector by lazy {
+        buildIcon(
+            "File",
+            "M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"
+        )
+    }
+
     /** 关闭 / 移除 */
     val Close: ImageVector by lazy {
         buildIcon(

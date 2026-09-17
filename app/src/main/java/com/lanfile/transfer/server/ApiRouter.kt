@@ -1,8 +1,8 @@
-package com.lanfile.transfer.server
+﻿package com.lanfile.transfer.server
 
 import android.content.Context
 import com.lanfile.transfer.model.TransferStatus
-import com.lanfile.transfer.repository.PhotoShareRepository
+import com.lanfile.transfer.repository.ShareRepository
 import com.lanfile.transfer.repository.TransferRepository
 import com.lanfile.transfer.storage.FileStorageManager
 import com.lanfile.transfer.util.AppLog
@@ -23,7 +23,7 @@ class ApiRouter(
     context: Context,
     private val storage: FileStorageManager,
     private val repository: TransferRepository,
-    photoRepository: PhotoShareRepository,
+    shareRepository: ShareRepository,
     private val sessions: SessionStore,
     private val tokenProvider: () -> String,
     private val deviceNameProvider: () -> String
@@ -31,7 +31,7 @@ class ApiRouter(
 
     private val appContext = context.applicationContext
     private val uploadHandler = UploadHandler(storage, repository)
-    private val photoHandler = PhotoHandler(appContext, photoRepository)
+    private val shareHandler = ShareHandler(appContext, shareRepository)
     private val assetCache = HashMap<String, ByteArray>()
 
     fun route(request: HttpRequest, response: HttpResponseWriter) {
@@ -79,7 +79,7 @@ class ApiRouter(
             request.method == "POST" && request.path == "/api/upload" ->
                 uploadHandler.handle(request, response)
 
-            request.path.startsWith("/api/photos") -> photoHandler.handle(request, response)
+            request.path.startsWith("/api/files") -> shareHandler.handle(request, response)
 
             else -> response.sendJson(404, UploadHandler.errorJson("接口不存在"))
         }

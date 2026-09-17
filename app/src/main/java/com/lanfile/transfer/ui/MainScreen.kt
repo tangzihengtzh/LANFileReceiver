@@ -1,8 +1,9 @@
-package com.lanfile.transfer.ui
+﻿package com.lanfile.transfer.ui
 
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.widget.Toast
@@ -70,14 +71,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.lanfile.transfer.media.PhotoAccess
+import com.lanfile.transfer.media.SharedFileAccess
 import com.lanfile.transfer.model.LanAddress
 import com.lanfile.transfer.model.ServerState
 import com.lanfile.transfer.model.ServerStatus
 import com.lanfile.transfer.model.TransferItem
 import com.lanfile.transfer.model.TransferStatus
 import com.lanfile.transfer.network.NetworkUtils
-import com.lanfile.transfer.repository.PhotoShareRepository
+import com.lanfile.transfer.repository.ShareRepository
 import com.lanfile.transfer.repository.TransferRepository
 import com.lanfile.transfer.server.ServerService
 import com.lanfile.transfer.storage.FileNameUtils
@@ -94,14 +95,14 @@ import kotlinx.coroutines.withContext
 @Composable
 fun MainScreen(
     repository: TransferRepository,
-    photoRepository: PhotoShareRepository,
+    shareRepository: ShareRepository,
     config: ServerConfig
 ) {
     val context = LocalContext.current
     val serverState by repository.serverState.collectAsState()
     val transfers by repository.transfers.collectAsState()
     val connectedDevices by repository.connectedDevices.collectAsState()
-    val sharedPhotos by photoRepository.photos.collectAsState()
+    val sharedFiles by shareRepository.files.collectAsState()
 
     var showPortDialog by remember { mutableStateOf(false) }
     var storageReady by remember { mutableStateOf(true) }
@@ -121,21 +122,30 @@ fun MainScreen(
             MAX_PHOTO_PICK
         }
     }
-    val pickPhotos = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickMultipleVisualMedia(maxPhotoPick)
-    ) { uris ->
-        if (uris.isEmpty()) return@rememberLauncherForActivityResult
+    fun addPickedUris(uris: List<Uri>, emptyHint: String) {
+        if (uris.isEmpty()) return
         scope.launch {
-            val items = withContext(Dispatchers.IO) { PhotoAccess.buildSharedPhotos(context, uris) }
-            val added = photoRepository.addAll(items)
+            val items = withContext(Dispatchers.IO) {
+                uris.forEach { SharedFileAccess.persistReadPermission(context, it) }
+                SharedFileAccess.buildSharedFiles(context, uris)
+            }
+            val added = shareRepository.addAll(items)
             val message = when {
-                added > 0 -> "已添加 $added 张照片"
-                items.isEmpty() -> "未识别到照片"
-                else -> "这些照片已在列表中"
+                added > 0 -> "已添加 $added 个文件"
+                items.isEmpty() -> emptyHint
+                else -> "这些文件已在列表中"
             }
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
     }
+
+    val pickPhotos = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(maxPhotoPick)
+    ) { uris -> addPickedUris(uris, "未识别到照片") }
+
+    val pickFiles = rememberLauncherForActivityResult(
+        OpenDocumentsContract()
+    ) { uris -> addPickedUris(uris, "未识别到文件") }
 
     LaunchedEffect(serverState.status) {
         storageReady = withContext(Dispatchers.IO) { FileStorageManager(context).canWrite() }
@@ -209,16 +219,17 @@ fun MainScreen(
                 GuideCard()
             }
 
-            PhotoShareSection(
-                photos = sharedPhotos,
+            ShareSection(
+                files = sharedFiles,
                 serverRunning = serverState.status == ServerStatus.RUNNING,
-                onPick = {
+                onPickPhotos = {
                     pickPhotos.launch(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                     )
                 },
-                onRemove = { photoRepository.remove(it) },
-                onClear = { photoRepository.clear() }
+                onPickFiles = { pickFiles.launch(arrayOf("*/*")) },
+                onRemove = { shareRepository.remove(it) },
+                onClear = { shareRepository.clear() }
             )
 
             StorageCard(port = config.port, onEditPort = { showPortDialog = true })

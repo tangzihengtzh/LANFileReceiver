@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    局域网文件接收 · 上传页面样式
    纯 CSS，无任何外部依赖，完全离线可用
    ============================================================ */
@@ -23,7 +23,7 @@
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   --sans: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC",
           "Hiragino Sans GB", sans-serif;
-  --photo-placeholder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000'%3E%3Cpath d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z'/%3E%3C/svg%3E");
+  --file-placeholder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000'%3E%3Cpath d='M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z'/%3E%3C/svg%3E");
 }
 
 @media (prefers-color-scheme: light) {
@@ -428,7 +428,7 @@ body {
 
 /* ---------------------------------------------- 手机照片画廊 */
 
-.photo-grid {
+.file-grid {
   list-style: none;
   margin: 4px 0 0;
   padding: 0;
@@ -437,7 +437,7 @@ body {
   gap: 12px;
 }
 
-.photo-card {
+.file-card {
   display: flex;
   flex-direction: column;
   border-radius: var(--radius-md);
@@ -447,7 +447,7 @@ body {
   animation: fade-in .22s ease;
 }
 
-.photo-preview {
+.file-preview {
   position: relative;
   aspect-ratio: 1 / 1;
   background: rgba(148, 165, 192, 0.14);
@@ -455,24 +455,40 @@ body {
   place-items: center;
 }
 
-.photo-preview img {
+.file-preview img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.photo-preview.no-preview::after {
-  content: "";
-  width: 42px;
-  height: 42px;
-  background-color: var(--text-dim);
-  opacity: .55;
-  -webkit-mask: var(--photo-placeholder) center / contain no-repeat;
-  mask: var(--photo-placeholder) center / contain no-repeat;
+.file-preview.no-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
-.photo-badge {
+.file-preview.no-preview::after {
+  content: "";
+  width: 38px;
+  height: 38px;
+  background-color: var(--text-dim);
+  opacity: .5;
+  -webkit-mask: var(--file-placeholder) center / contain no-repeat;
+  mask: var(--file-placeholder) center / contain no-repeat;
+}
+
+.file-kind {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .6px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.file-badge {
   position: absolute;
   left: 8px;
   bottom: 8px;
@@ -486,11 +502,11 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, .3);
 }
 
-.photo-badge svg { width: 12px; height: 12px; }
+.file-badge svg { width: 12px; height: 12px; }
 
-.photo-card[data-sent="1"] .photo-badge { display: grid; }
+.file-card[data-sent="1"] .file-badge { display: grid; }
 
-.photo-meta {
+.file-meta {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -498,7 +514,7 @@ body {
   min-width: 0;
 }
 
-.photo-name {
+.file-name {
   font-size: 13px;
   font-weight: 550;
   overflow: hidden;
@@ -506,9 +522,9 @@ body {
   white-space: nowrap;
 }
 
-.photo-size { font-size: 11.5px; color: var(--text-dim); }
+.file-size { font-size: 11.5px; color: var(--text-dim); }
 
-.photo-actions { padding: 10px 12px 12px; }
+.file-actions { padding: 10px 12px 12px; }
 
 .btn-small {
   width: 100%;
@@ -517,7 +533,7 @@ body {
   border-radius: 8px;
 }
 
-.photo-empty {
+.file-empty {
   margin: 6px 0 2px;
   font-size: 13px;
   color: var(--text-dim);

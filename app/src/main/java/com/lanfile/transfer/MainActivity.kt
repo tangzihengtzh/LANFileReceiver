@@ -1,4 +1,4 @@
-package com.lanfile.transfer
+﻿package com.lanfile.transfer
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
             LanTheme {
                 MainScreen(
                     repository = app.repository,
-                    photoRepository = app.photoRepository,
+                    shareRepository = app.shareRepository,
                     config = app.config
                 )
             }

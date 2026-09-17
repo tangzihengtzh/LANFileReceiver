@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    局域网文件接收 · 上传页面脚本
    纯原生 JavaScript，无任何外部依赖，完全离线可用
    ============================================================ */
@@ -23,12 +23,12 @@
   var statusBox = document.getElementById('status');
   var statusText = document.getElementById('status-text');
   var footerInfo = document.getElementById('footer-info');
-  var photosSection = document.getElementById('photos-section');
-  var photoGrid = document.getElementById('photo-grid');
-  var photosSummary = document.getElementById('photos-summary');
-  var photosEmpty = document.getElementById('photos-empty');
-  var photosRefresh = document.getElementById('photos-refresh');
-  var photosDownloadAll = document.getElementById('photos-download-all');
+  var filesSection = document.getElementById('files-section');
+  var fileGrid = document.getElementById('file-grid');
+  var filesSummary = document.getElementById('files-summary');
+  var filesEmpty = document.getElementById('files-empty');
+  var filesRefresh = document.getElementById('files-refresh');
+  var filesDownloadAll = document.getElementById('files-download-all');
 
   var ICONS = {
     waiting:
@@ -80,9 +80,9 @@
     document.body.classList.remove('locked');
     gateError.hidden = true;
     gateInput.value = '';
-    photoSignature = '';
+    fileSignature = '';
     refreshStatus();
-    refreshPhotos();
+    refreshFiles();
   }
 
   function submitToken() {
@@ -302,7 +302,7 @@
     }
     if (!next) {
       updateSummary();
-      refreshPhotos();
+      refreshFiles();
       return;
     }
     running = true;
@@ -533,52 +533,66 @@
     updateSummary();
   });
 
-  /* ------------------------------------------------ 手机照片画廊 */
+  /* ------------------------------------------------ 手机文件列表 */
 
-  var photoSignature = '';
+  var fileSignature = '';
 
-  function createPhotoCard(photo) {
+  function extensionLabel(name) {
+    var index = (name || '').lastIndexOf('.');
+    if (index <= 0 || index >= name.length - 1) return '文件';
+    return name.slice(index + 1).slice(0, 5).toUpperCase();
+  }
+
+  function createFileCard(file) {
     var li = document.createElement('li');
-    li.className = 'photo-card';
-    if (photo.downloaded) li.setAttribute('data-sent', '1');
+    li.className = 'file-card';
+    if (file.downloaded) li.setAttribute('data-sent', '1');
 
     var preview = document.createElement('div');
-    preview.className = 'photo-preview';
+    preview.className = 'file-preview';
 
-    var img = document.createElement('img');
-    img.loading = 'lazy';
-    img.alt = photo.name;
-    img.src = '/api/photos/' + encodeURIComponent(photo.id) + '/thumb';
-    img.addEventListener('error', function () {
-      img.hidden = true;
+    if (file.image) {
+      var img = document.createElement('img');
+      img.loading = 'lazy';
+      img.alt = file.name;
+      img.src = '/api/files/' + encodeURIComponent(file.id) + '/thumb';
+      img.addEventListener('error', function () {
+        img.hidden = true;
+        preview.classList.add('no-preview');
+      });
+      preview.appendChild(img);
+    } else {
       preview.classList.add('no-preview');
-    });
-    preview.appendChild(img);
+      var kind = document.createElement('span');
+      kind.className = 'file-kind';
+      kind.textContent = extensionLabel(file.name);
+      preview.appendChild(kind);
+    }
 
     var badge = document.createElement('span');
-    badge.className = 'photo-badge';
+    badge.className = 'file-badge';
     badge.innerHTML = ICONS.completed;
     badge.title = '已发送到电脑';
     preview.appendChild(badge);
 
     var meta = document.createElement('div');
-    meta.className = 'photo-meta';
+    meta.className = 'file-meta';
     var name = document.createElement('span');
-    name.className = 'photo-name';
-    name.textContent = photo.name;
-    name.title = photo.name;
+    name.className = 'file-name';
+    name.textContent = file.name;
+    name.title = file.name;
     var size = document.createElement('span');
-    size.className = 'photo-size';
-    size.textContent = formatSize(photo.size);
+    size.className = 'file-size';
+    size.textContent = formatSize(file.size);
     meta.appendChild(name);
     meta.appendChild(size);
 
     var actions = document.createElement('div');
-    actions.className = 'photo-actions';
+    actions.className = 'file-actions';
     var link = document.createElement('a');
     link.className = 'btn btn-primary btn-small';
-    link.href = '/api/photos/' + encodeURIComponent(photo.id);
-    link.setAttribute('download', photo.name);
+    link.href = '/api/files/' + encodeURIComponent(file.id);
+    link.setAttribute('download', file.name);
     link.textContent = '下载到电脑';
     actions.appendChild(link);
 
@@ -588,32 +602,32 @@
     return li;
   }
 
-  function renderPhotos(list) {
-    var signature = list.map(function (photo) {
-      return photo.id + (photo.downloaded ? '1' : '0');
+  function renderFiles(list) {
+    var signature = list.map(function (file) {
+      return file.id + (file.downloaded ? '1' : '0');
     }).join(',');
 
-    if (signature === photoSignature) return;
-    photoSignature = signature;
+    if (signature === fileSignature) return;
+    fileSignature = signature;
 
-    photosSection.hidden = false;
-    photosEmpty.hidden = list.length !== 0;
-    photoGrid.innerHTML = '';
+    filesSection.hidden = false;
+    filesEmpty.hidden = list.length !== 0;
+    fileGrid.innerHTML = '';
 
     var total = 0;
-    list.forEach(function (photo) {
-      total += photo.size || 0;
-      photoGrid.appendChild(createPhotoCard(photo));
+    list.forEach(function (file) {
+      total += file.size || 0;
+      fileGrid.appendChild(createFileCard(file));
     });
 
-    photosSummary.textContent = list.length
-      ? list.length + ' 张 · ' + formatSize(total)
+    filesSummary.textContent = list.length
+      ? list.length + ' 个 · ' + formatSize(total)
       : '';
   }
 
-  function refreshPhotos() {
+  function refreshFiles() {
     if (running) return;
-    fetch('/api/photos', { cache: 'no-store' })
+    fetch('/api/files', { cache: 'no-store' })
       .then(function (response) {
         if (response.status === 403) {
           showGate();
@@ -624,20 +638,20 @@
       })
       .then(function (data) {
         if (!data) return;
-        renderPhotos((data && data.photos) || []);
+        renderFiles((data && data.files) || []);
       })
       .catch(function () {
         /* 手机不可达时保留上一次的列表 */
       });
   }
 
-  photosRefresh.addEventListener('click', function () {
-    photoSignature = '';
-    refreshPhotos();
+  filesRefresh.addEventListener('click', function () {
+    fileSignature = '';
+    refreshFiles();
   });
 
-  photosDownloadAll.addEventListener('click', function () {
-    var links = photoGrid.querySelectorAll('a[download]');
+  filesDownloadAll.addEventListener('click', function () {
+    var links = fileGrid.querySelectorAll('a[download]');
     if (!links.length) return;
     var index = 0;
     (function next() {
@@ -686,5 +700,5 @@
 
   refreshStatus();
   setInterval(refreshStatus, 8000);
-  setInterval(refreshPhotos, 6000);
+  setInterval(refreshFiles, 6000);
 })();
